@@ -85,7 +85,8 @@ $.fn.extend({
 		settings = $.extend({
 			autoclear: $.mask.autoclear,
 			placeholder: $.mask.placeholder, // Load default placeholder
-			completed: null
+			completed: null,
+			incompleted: null
 		}, settings);
 
 
@@ -126,16 +127,18 @@ $.fn.extend({
 				focusText = input.val();
 
             function tryFireCompleted(){
-                if (!settings.completed) {
-                    return;
-                }
-
                 for (var i = firstNonMaskPos; i <= lastRequiredNonMaskPos; i++) {
                     if (tests[i] && buffer[i] === getPlaceholder(i)) {
+                        if (settings.incompleted) {
+                            settings.incompleted.call(input);
+                        }
                         return;
                     }
                 }
-                settings.completed.call(input);
+
+                if (settings.completed) {
+                    settings.completed.call(input);
+                }
             }
 
             function getPlaceholder(i){
@@ -263,6 +266,7 @@ $.fn.extend({
 					clearBuffer(begin, end);
 					shiftL(begin, end - 1);
 
+                    tryFireCompleted();
 					e.preventDefault();
 				} else if( k === 13 ) { // enter
 					blurEvent.call(this, e);
@@ -312,9 +316,7 @@ $.fn.extend({
 							}else{
 								input.caret(next);
 							}
-                            if(pos.begin <= lastRequiredNonMaskPos){
-		                         tryFireCompleted();
-                             }
+                            tryFireCompleted();
 						}
 					}
 					e.preventDefault();

@@ -45,17 +45,16 @@
             return settings = $.extend({
                 autoclear: $.mask.autoclear,
                 placeholder: $.mask.placeholder,
-                completed: null
+                completed: null,
+                incompleted: null
             }, settings), defs = $.mask.definitions, tests = [], partialPosition = len = mask.length, 
             firstNonMaskPos = null, mask = String(mask), $.each(mask.split(""), function(i, c) {
                 "?" == c ? (len--, partialPosition = i) : defs[c] ? (tests.push(new RegExp(defs[c])), 
                 null === firstNonMaskPos && (firstNonMaskPos = tests.length - 1), partialPosition > i && (lastRequiredNonMaskPos = tests.length - 1)) : tests.push(null);
             }), this.trigger("unmask").each(function() {
                 function tryFireCompleted() {
-                    if (settings.completed) {
-                        for (var i = firstNonMaskPos; lastRequiredNonMaskPos >= i; i++) if (tests[i] && buffer[i] === getPlaceholder(i)) return;
-                        settings.completed.call(input);
-                    }
+                    for (var i = firstNonMaskPos; lastRequiredNonMaskPos >= i; i++) if (tests[i] && buffer[i] === getPlaceholder(i)) return void (settings.incompleted && settings.incompleted.call(input));
+                    settings.completed && settings.completed.call(input);
                 }
                 function getPlaceholder(i) {
                     return i < settings.placeholder.length ? settings.placeholder.charAt(i) : settings.placeholder.charAt(0);
@@ -107,7 +106,7 @@
                         oldVal = input.val(), 8 === k || 46 === k || iPhone && 127 === k ? (pos = input.caret(), 
                         begin = pos.begin, end = pos.end, end - begin === 0 && (begin = 46 !== k ? seekPrev(begin) : end = seekNext(begin - 1), 
                         end = 46 === k ? seekNext(end) : end), clearBuffer(begin, end), shiftL(begin, end - 1), 
-                        e.preventDefault()) : 13 === k ? blurEvent.call(this, e) : 27 === k && (input.val(focusText), 
+                        tryFireCompleted(), e.preventDefault()) : 13 === k ? blurEvent.call(this, e) : 27 === k && (input.val(focusText), 
                         input.caret(0, checkVal()), e.preventDefault());
                     }
                 }
@@ -123,7 +122,7 @@
                                     };
                                     setTimeout(proxy, 0);
                                 } else input.caret(next);
-                                pos.begin <= lastRequiredNonMaskPos && tryFireCompleted();
+                                pos.begin <= lastRequiredNonMaskPos ? tryFireCompleted() : input.trigger("input.mask");
                             }
                             e.preventDefault();
                         }
