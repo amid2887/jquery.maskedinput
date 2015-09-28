@@ -112,8 +112,8 @@
                 }
                 function keypressEvent(e) {
                     if (!input.prop("readonly")) {
-                        var p, c, next, k = e.which || e.keyCode, pos = input.caret();
-                        if (!(e.ctrlKey || e.altKey || e.metaKey || 41 > k) && k && 13 !== k) {
+                        var p, c, next, k = e.which || e.keyCode, pos = input.caret(), F_Keys = k > 111 && 124 > k;
+                        if (!(e.ctrlKey || e.altKey || e.metaKey || 41 > k || F_Keys) && k && 13 !== k) {
                             if (pos.end - pos.begin !== 0 && (clearBuffer(pos.begin, pos.end), shiftL(pos.begin, pos.end - 1)), 
                             p = seekNext(pos.begin - 1), len > p && (c = String.fromCharCode(k), tests[p].test(c))) {
                                 if (shiftR(p), buffer[p] = c, writeBuffer(), next = seekNext(p), android) {
@@ -122,7 +122,7 @@
                                     };
                                     setTimeout(proxy, 0);
                                 } else input.caret(next);
-                                pos.begin <= lastRequiredNonMaskPos ? tryFireCompleted() : input.trigger("input.mask");
+                                tryFireCompleted();
                             }
                             e.preventDefault();
                         }
@@ -159,7 +159,9 @@
                     return $.map(buffer, function(c, i) {
                         return tests[i] && c != getPlaceholder(i) ? c : null;
                     }).join("");
-                }), input.one("unmask", function() {
+                });
+                var onPasteTimeout;
+                input.one("unmask", function() {
                     input.off(".mask").removeData($.mask.dataName);
                 }).on("focus.mask", function() {
                     if (!input.prop("readonly")) {
@@ -170,10 +172,10 @@
                         }, 10);
                     }
                 }).on("blur.mask", blurEvent).on("keydown.mask", keydownEvent).on("keypress.mask", keypressEvent).on("input.mask paste.mask", function() {
-                    input.prop("readonly") || setTimeout(function() {
+                    input.prop("readonly") || (clearTimeout(onPasteTimeout), onPasteTimeout = setTimeout(function() {
                         var pos = checkVal(!0);
                         input.caret(pos), tryFireCompleted();
-                    }, 0);
+                    }, 0));
                 }), chrome && android && input.off("input.mask").on("input.mask", androidInputEvent), 
                 checkVal();
             });

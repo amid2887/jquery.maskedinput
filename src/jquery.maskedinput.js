@@ -288,7 +288,9 @@ $.fn.extend({
 					c,
 					next;
 
-				if (e.ctrlKey || e.altKey || e.metaKey || k < 41) {//Ignore
+				var F_Keys = (k > 111 && k < 124); /* F1 - F12 (firefox triggers keypressEvent, but other browsers not) */
+
+				if (e.ctrlKey || e.altKey || e.metaKey || k < 41 || F_Keys) {//Ignore
 					return;
 				} else if ( k && k !== 13 ) {
 					if (pos.end - pos.begin !== 0){
@@ -392,6 +394,7 @@ $.fn.extend({
 				}).join('');
 			});
 
+			var onPasteTimeout;
 
 			input
 				.one("unmask", function() {
@@ -431,7 +434,9 @@ $.fn.extend({
                         return;
                     }
 
-					setTimeout(function() {
+					clearTimeout(onPasteTimeout);
+
+					onPasteTimeout = setTimeout(function() {
 						var pos=checkVal(true);
 						input.caret(pos);
                         tryFireCompleted();
